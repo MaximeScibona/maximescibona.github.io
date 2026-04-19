@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maxime Scibona — Robotique & IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050a14;
+      --bg2: #080f1e;
+      --bg3: #0d1628;
+      --blue: #1a6cf5;
+      --blue-light: #4d8fff;
+      --cyan: #00d4ff;
+      --cyan-dim: rgba(0, 212, 255, 0.15);
+      --white: #e8eef8;
+      --muted: #5a6a85;
+      --border: rgba(26, 108, 245, 0.18);
+      --glow: rgba(0, 212, 255, 0.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'Syne', sans-serif;
+      overflow-x: hidden;
+      cursor: none;
+    }
+    a, button, .expand-btn { cursor: pointer !important; }
+
+    /* CUSTOM CURSOR */
+    .cursor {
+      width: 8px; height: 8px;
+      background: var(--cyan);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transition: transform 0.1s ease;
+    }
+    .cursor-ring {
+      width: 32px; height: 32px;
+      border: 1px solid rgba(0, 212, 255, 0.4);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none;
+      z-index: 9998;
+      transition: all 0.15s ease;
+    }
+
+    /* NOISE TEXTURE OVERLAY */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.4;
+    }
+
+    /* GRID BACKGROUND */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(26, 108, 245, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(26, 108, 245, 0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 20px 60px;
+      display: flex; justify-content: space-between; align-items: center;
+      background: linear-gradient(to bottom, rgba(5,10,20,0.95), transparent);
+      backdrop-filter: blur(8px);
+    }
+    .nav-logo {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--cyan);
+      letter-spacing: 0.1em;
+      text-decoration: none;
+    }
+    .nav-links {
+      display: flex; gap: 40px; list-style: none;
+    }
+    .nav-links a {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.1em;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--cyan); }
+
+    /* SECTIONS */
+    section { position: relative; z-index: 2; }
+
+    /* HERO */
+    #hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 120px 60px 80px;
+      overflow: hidden;
+    }
+
+    .hero-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--cyan);
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.2s forwards;
+    }
+    .hero-eyebrow span { color: var(--muted); }
+
+    .hero-name {
+      font-size: clamp(56px, 8vw, 120px);
+      font-weight: 800;
+      line-height: 0.92;
+      letter-spacing: -0.03em;
+      margin-bottom: 32px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.4s forwards;
+    }
+    .hero-name .line2 {
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(0, 212, 255, 0.4);
+    }
+
+    .hero-tagline {
+      max-width: 540px;
+      font-size: 17px;
+      line-height: 1.65;
+      color: rgba(232, 238, 248, 0.65);
+      margin-bottom: 48px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.6s forwards;
+    }
+
+    .hero-cta {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.8s forwards;
+    }
+    .btn-primary {
+      padding: 14px 32px;
+      background: var(--blue);
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: all 0.2s;
+      border: none; cursor: none;
+    }
+    .btn-primary:hover { background: var(--blue-light); transform: translateY(-2px); }
+    .btn-ghost {
+      padding: 14px 32px;
+      background: transparent;
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-decoration: none;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+      cursor: none;
+    }
+    .btn-ghost:hover { border-color: var(--cyan); background: var(--cyan-dim); }
+
+    /* Hero orb */
+    .hero-orb {
+      position: absolute;
+      right: -100px; top: 50%;
+      transform: translateY(-50%);
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(26, 108, 245, 0.12) 0%, rgba(0, 212, 255, 0.05) 40%, transparent 70%);
+      pointer-events: none;
+      animation: pulse 6s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: translateY(-50%) scale(1); opacity: 0.7; }
+      50% { transform: translateY(-50%) scale(1.05); opacity: 1; }
+    }
+
+    /* Hero status */
+    .hero-status {
+      position: absolute;
+      right: 60px; bottom: 60px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-align: right;
+      opacity: 0;
+      animation: fadeIn 1s 1.2s forwards;
+    }
+    .status-dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: #22c55e;
+      border-radius: 50%;
+      margin-right: 8px;
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+
+    /* SECTION COMMONS */
+    .section-header {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 64px;
+    }
+    .section-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--cyan);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+    .section-line {
+      flex: 1; height: 1px;
+      background: linear-gradient(to right, var(--border), transparent);
+    }
+    .section-title {
+      font-size: clamp(32px, 4vw, 52px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 24px;
+    }
+
+    /* ABOUT */
+    #about {
+      padding: 100px 60px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .about-text {
+      font-size: 16px;
+      line-height: 1.75;
+      color: rgba(232, 238, 248, 0.7);
+    }
+    .about-text p + p { margin-top: 20px; }
+    .about-accent { color: var(--cyan); font-weight: 600; }
+
+    .about-stats {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    }
+    .stat-card {
+      padding: 28px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(to right, var(--blue), var(--cyan));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .stat-card:hover { border-color: rgba(0, 212, 255, 0.3); transform: translateY(-3px); }
+    .stat-card:hover::before { opacity: 1; }
+    .stat-num {
+      font-size: 42px; font-weight: 800;
+      color: var(--cyan);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .stat-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* EXPERIENCE */
+    #experience { padding: 100px 60px; }
+
+    .exp-grid { display: grid; gap: 32px; }
+    .exp-card {
+      padding: 40px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 40px;
+      transition: border-color 0.3s, background 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .exp-card::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at top left, rgba(26, 108, 245, 0.06), transparent 60%);
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .exp-card:hover { border-color: rgba(0, 212, 255, 0.25); background: var(--bg3); }
+    .exp-card:hover::after { opacity: 1; }
+
+    .exp-meta { }
+    .exp-period {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--cyan);
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+    .exp-company {
+      font-size: 20px; font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .exp-location {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+    .exp-badge {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 4px 10px;
+      background: rgba(26, 108, 245, 0.15);
+      border: 1px solid rgba(26, 108, 245, 0.3);
+      border-radius: 3px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--blue-light);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .exp-content h3 {
+      font-size: 22px; font-weight: 700;
+      margin-bottom: 12px; line-height: 1.3;
+    }
+    .exp-content p {
+      font-size: 14px;
+      color: rgba(232, 238, 248, 0.65);
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+    .exp-achievements {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .exp-achievements-extra {
+      display: flex; flex-direction: column; gap: 10px;
+      margin-top: 10px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.5s ease, opacity 0.4s ease;
+      opacity: 0;
+    }
+    .exp-card.expanded .exp-achievements-extra {
+      max-height: 2000px;
+      opacity: 1;
+    }
+    .expand-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-top: 16px;
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--cyan);
+      letter-spacing: 0.08em;
+      cursor: pointer !important;
+      pointer-events: all !important;
+      position: relative;
+      z-index: 10;
+      transition: all 0.2s;
+    }
+    .expand-btn:hover { border-color: var(--cyan); background: var(--cyan-dim); }
+    .expand-btn .btn-arrow {
+      display: inline-block;
+      transition: transform 0.3s ease;
+      font-style: normal;
+    }
+    .exp-card.expanded .expand-btn .btn-arrow { transform: rotate(180deg); }
+
+    .achievement {
+      display: flex; gap: 12px; align-items: flex-start;
+      font-size: 13px;
+      color: rgba(232, 238, 248, 0.75);
+      line-height: 1.6;
+    }
+    .achievement::before {
+      content: '▸';
+      color: var(--cyan);
+      font-size: 10px;
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+
+    .exp-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+    .tag {
+      padding: 4px 10px;
+      background: rgba(0, 212, 255, 0.06);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-radius: 3px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: rgba(0, 212, 255, 0.7);
+      letter-spacing: 0.05em;
+    }
+
+    /* SKILLS */
+    #skills { padding: 100px 60px; }
+
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .skill-group {
+      padding: 32px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .skill-group:hover { border-color: rgba(0, 212, 255, 0.25); transform: translateY(-4px); }
+    .skill-group-icon {
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(26, 108, 245, 0.12);
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 18px;
+    }
+    .skill-group h4 {
+      font-size: 14px; font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--white);
+    }
+    .skill-list {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .skill-item {
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .skill-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: rgba(232, 238, 248, 0.7);
+    }
+    .badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      padding: 3px 9px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .badge-maitrise {
+      background: rgba(0, 212, 255, 0.12);
+      border: 1px solid rgba(0, 212, 255, 0.35);
+      color: var(--cyan);
+    }
+    .badge-pratique {
+      background: rgba(26, 108, 245, 0.12);
+      border: 1px solid rgba(26, 108, 245, 0.35);
+      color: var(--blue-light);
+    }
+    .badge-notions {
+      background: rgba(90, 106, 133, 0.12);
+      border: 1px solid rgba(90, 106, 133, 0.3);
+      color: var(--muted);
+    }
+
+    /* TOOLS */
+    #tools { padding: 60px 60px 100px; }
+    .tools-header { margin-bottom: 40px; }
+    .tools-grid {
+      display: flex; flex-wrap: wrap; gap: 12px;
+    }
+    .tool-chip {
+      padding: 8px 16px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: rgba(232, 238, 248, 0.7);
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+    }
+    .tool-chip:hover {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      background: var(--cyan-dim);
+    }
+
+    /* CONTACT */
+    #contact {
+      padding: 100px 60px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #contact::before {
+      content: '';
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 800px; height: 400px;
+      background: radial-gradient(ellipse, rgba(26, 108, 245, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .contact-title {
+      font-size: clamp(36px, 5vw, 72px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+      line-height: 1.0;
+    }
+    .contact-title span { color: var(--cyan); }
+    .contact-sub {
+      font-size: 16px;
+      color: rgba(232, 238, 248, 0.55);
+      margin-bottom: 48px;
+      max-width: 480px;
+      margin-left: auto; margin-right: auto;
+    }
+    .contact-links {
+      display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+    }
+    .contact-link {
+      padding: 14px 28px;
+      background: transparent;
+      color: var(--white);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-decoration: none;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .contact-link:hover { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim); }
+    .contact-link svg { width: 16px; height: 16px; }
+
+    /* FOOTER */
+    footer {
+      padding: 32px 60px;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      position: relative; z-index: 2;
+    }
+
+    /* FORMATION */
+    #formation { padding: 100px 60px; }
+    .formation-timeline { display: flex; flex-direction: column; gap: 0; position: relative; }
+    .formation-timeline::before {
+      content: '';
+      position: absolute; left: 159px; top: 0; bottom: 0; width: 1px;
+      background: linear-gradient(to bottom, var(--blue), transparent);
+    }
+    .formation-item {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 40px;
+      padding: 32px 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      transition: background 0.3s;
+    }
+    .formation-item:last-child { border-bottom: none; }
+    .formation-item::after {
+      content: '';
+      position: absolute; left: 152px; top: 38px;
+      width: 15px; height: 15px;
+      border-radius: 50%;
+      border: 2px solid var(--blue);
+      background: var(--bg);
+      z-index: 1;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .formation-item:hover::after { border-color: var(--cyan); background: var(--cyan-dim); }
+    .formation-year {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--cyan);
+      letter-spacing: 0.1em;
+      padding-top: 2px;
+      text-align: right;
+      padding-right: 32px;
+    }
+    .formation-body h4 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+    .formation-body .formation-school {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--blue-light);
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+    }
+    .formation-body p {
+      font-size: 13px;
+      color: rgba(232,238,248,0.6);
+      line-height: 1.65;
+    }
+    .formation-diploma {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 3px 10px;
+      background: rgba(0,212,255,0.07);
+      border: 1px solid rgba(0,212,255,0.18);
+      border-radius: 3px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: rgba(0,212,255,0.7);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    @media (max-width: 900px) {
+      #formation { padding: 80px 24px; }
+      .formation-timeline::before { display: none; }
+      .formation-item { grid-template-columns: 1fr; gap: 8px; }
+      .formation-item::after { display: none; }
+      .formation-year { text-align: left; padding-right: 0; }
+    }
+
+    /* SCROLL REVEAL */
+    .reveal {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.hidden {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    .reveal.visible {
+      opacity: 1 !important;
+      transform: translateY(0) !important;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      nav { padding: 18px 24px; }
+      .nav-links { display: none; }
+      #hero { padding: 120px 24px 80px; }
+      #about { padding: 80px 24px; grid-template-columns: 1fr; gap: 48px; }
+      #experience { padding: 80px 24px; }
+      .exp-card { grid-template-columns: 1fr; gap: 20px; }
+      #skills { padding: 80px 24px; }
+      .skills-grid { grid-template-columns: 1fr 1fr; }
+      #tools { padding: 40px 24px 80px; }
+      #contact { padding: 80px 24px; }
+      #softskills { padding: 80px 24px !important; }
+      #softskills > div:last-child > div { grid-template-columns: 1fr !important; }
+      footer { padding: 24px; flex-direction: column; gap: 8px; text-align: center; }
+      .hero-status { display: none; }
+      .hero-orb { width: 300px; height: 300px; right: -80px; }
+    }
+    @media (max-width: 600px) {
+      .skills-grid { grid-template-columns: 1fr; }
+      .about-stats { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#hero" class="nav-logo">MS_ // PORTFOLIO</a>
+    <ul class="nav-links">
+      <li><a href="#about">À propos</a></li>
+      <li><a href="#experience">Expériences</a></li>
+      <li><a href="#skills">Compétences</a></li>
+      <li><a href="#formation">Formation</a></li>
+      <li><a href="#softskills">Softskills</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-orb"></div>
+    <div class="hero-eyebrow">
+      <span>// </span>Ingénieur IA & Robotique
+    </div>
+    <h1 class="hero-name">
+      MAXIME<br>
+      <span class="line2">SCIBONA</span>
+    </h1>
+    <p class="hero-tagline">
+      De la simulation Gazebo aux tests terrains, j'ai appris à faire fonctionner l'IA sur du matériel réel. Ce qui me motive : concevoir des robots humanoïdes capables d'évoluer dans le monde réel, en toute sécurité.
+    </p>
+    <div class="hero-cta">
+      <a href="#experience" class="btn-primary">Voir mes projets</a>
+      <a href="#contact" class="btn-ghost">Me contacter</a>
+    </div>
+    <div class="hero-status">
+      <span class="status-dot"></span>Disponible — Ouvert aux opportunités<br>
+      <span style="margin-left: 14px;">Robotique humanoïde · Défense · Mobilité autonome</span>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="about-left reveal">
+      <div class="section-header">
+        <span class="section-tag">// 001</span>
+        <div class="section-line"></div>
+      </div>
+      <h2 class="section-title">À propos<br>de moi</h2>
+      <div class="about-text">
+        <p>
+          Ingénieur IA diplômé, j'ai développé mes premières expériences concrètes en robotique mobile, apprentissage par renforcement contraint et perception embarquée au travers de deux missions complémentaires dans une startup spécialisée en robotique de service et un laboratoire de recherche.
+        </p>
+        <p>
+          Mon profil combine la rigueur académique (benchmarking, Safe RL, rédaction scientifique) avec une expérience terrain réelle sur des architectures embarquées (ROS 2, déploiement en conditions hôtelières réelles).
+        </p>
+        <p>
+          Passionné par la <span class="about-accent">robotique humanoïde</span>, je cherche à rejoindre des équipes qui donnent aux robots la capacité d'agir, de décider et d'évoluer parmi nous.
+        </p>
+      </div>
+    </div>
+    <div class="about-stats reveal">
+      <div class="stat-card">
+        <div class="stat-num">2+</div>
+        <div class="stat-label">Expériences R&D</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">BAC+5</div>
+        <div class="stat-label">Master IA</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">ROS 2</div>
+        <div class="stat-label">Navigation & SLAM</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">Safe<br>RL</div>
+        <div class="stat-label">PPO-Lag · CPO · CMDP</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section id="experience">
+    <div class="reveal">
+      <div class="section-header">
+        <span class="section-tag">// 002</span>
+        <div class="section-line"></div>
+      </div>
+      <h2 class="section-title">Expériences</h2>
+    </div>
+
+    <div class="exp-grid">
+
+      <!-- IPSUM TEK -->
+      <div class="exp-card reveal" id="card-ipsum">
+        <div class="exp-meta">
+          <div class="exp-period">2025</div>
+          <div class="exp-company">Ipsum Tek</div>
+          <div class="exp-location">Startup deeptech · Avignon</div>
+          <div class="exp-badge">Stage Ingénieur</div>
+        </div>
+        <div class="exp-content">
+          <h3>Ingénieur IA Robotique — Robot de service ONYRO</h3>
+          <p>Développement de la stack IA complète d'ONYRO, robot de service autonome pour l'hôtellerie-restauration. Travail sur l'ensemble de la chaîne de perception, navigation et interaction.</p>
+          <div class="exp-achievements">
+            <div class="achievement">Amélioration du système VSLAM (Visual Simultaneous Localization and Mapping) propriétaire d'Ipsum Tek par intégration de features ORB-SLAM3 / SuperPoint</div>
+            <div class="achievement">Développement d'un système d'estimation de pose 6-DoF (PnP / FoundationPose) pour la localisation précise d'objets à saisir par le bras robotisé</div>
+            <div class="achievement">Entraînement d'un agent par Deep Reinforcement Learning (PPO / SAC) sous Gazebo pour la planification de trajectoire en environnement encombré</div>
+            <div class="achievement">Conception d'un contrôleur de bras robotisé (MoveIt 2 / IK solver) pour la saisie et le dépôt d'objets sur plateaux avec retour haptique visuel</div>
+            <div class="achievement">Mise en place d'un pipeline de transfer learning (ResNet / EfficientNet) pour l'adaptation du modèle de vision à de nouveaux environnements avec peu de données</div>
+            <div class="achievement">Mise en place d'un pipeline MLOps (MLflow / DVC) pour le versioning des modèles, le suivi des expériences et le déploiement continu sur l'architecture embarquée (Jetson Orin)</div>
+          </div>
+          <div class="exp-achievements-extra">
+            <div class="achievement">Implémentation d'un pipeline de détection d'objets en temps réel (YOLOv8) pour la reconnaissance de verres, bouteilles et plateaux sur flux vidéo embarqué</div>
+            <div class="achievement">Développement d'un module de segmentation sémantique (DeepLab / Mask R-CNN) pour la compréhension de scènes intérieures dynamiques (couloirs, ascenseurs, tables)</div>
+            <div class="achievement">Conception et simulation d'environnements hôteliers dans Gazebo (ROS 2) pour les tests de navigation et d'évitement d'obstacles 3D</div>
+            <div class="achievement">Intégration d'un modèle de reconnaissance vocale (Whisper / Wav2Vec 2.0) multilingual pour l'interprétation des commandes clients en temps réel</div>
+            <div class="achievement">Développement d'un module de dialogue (NLU/NLG) basé sur un LLM fine-tuné pour la gestion des requêtes clients en hôtellerie-restauration</div>
+            <div class="achievement">Développement d'un nœud ROS 2 (C++/Python) pour la fusion de capteurs LiDAR 2D et caméras RGB-D (odométrie visuelle-inertielle)</div>
+            <div class="achievement">Implémentation d'un algorithme de planification de chemin global/local (Nav2 + DWB) avec adaptation dynamique aux obstacles mobiles (piétons, chariots)</div>
+            <div class="achievement">Construction d'un dataset annoté (CVAT) d'images d'environnements hôteliers et entraînement d'un modèle de détection de personnes robuste aux occlusions partielles</div>
+            <div class="achievement">Développement d'un module de synthèse vocale (TTS) multilingue (Coqui TTS / ElevenLabs API) pour les interactions verbales personnalisées avec les clients</div>
+            <div class="achievement">Implémentation d'un système de cartographie multi-étages avec association de cartes 2D par couche et gestion de la montée/descente d'ascenseur via ROS 2 Actions</div>
+            <div class="achievement">Évaluation et benchmarking des performances de navigation (métriques : SPL, NE, SR) en simulation Gazebo et sur site pilote réel (hôtel)</div>
+            <div class="achievement">Conception d'un module d'explicabilité (Grad-CAM, SHAP) pour l'audit et la validation des décisions de perception visuelle du robot en conditions réelles</div>
+            <div class="achievement">Développement d'une interface de supervision temps réel (RViz 2 / Foxglove) pour la visualisation de l'état du robot, des cartes et des flux de perception</div>
+            <div class="achievement">Rédaction de la documentation technique des modules IA développés et contribution à l'écriture d'un rapport R&D en vue d'un dépôt de brevet additionnel</div>
+          </div>
+          <a href="javascript:void(0)" class="expand-btn" onclick="var c=document.getElementById('card-ipsum');var e=c.classList.toggle('expanded');this.querySelector('span').textContent=e?'Moins de détails':'Plus de détails';">
+            <span>Plus de détails</span><i class="btn-arrow">↓</i>
+          </a>
+          <div class="exp-tags">
+            <span class="tag">ROS 2</span>
+            <span class="tag">YOLOv8</span>
+            <span class="tag">VSLAM</span>
+            <span class="tag">MoveIt 2</span>
+            <span class="tag">Gazebo</span>
+            <span class="tag">Jetson Orin</span>
+            <span class="tag">MLflow</span>
+            <span class="tag">Nav2</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIA -->
+      <div class="exp-card reveal" id="card-lia">
+        <div class="exp-meta">
+          <div class="exp-period">2025</div>
+          <div class="exp-company">LIA</div>
+          <div class="exp-location">Labo. Informatique d'Avignon</div>
+          <div class="exp-badge">Stage Recherche</div>
+        </div>
+        <div class="exp-content">
+          <h3>Chercheur — Safe Reinforcement Learning pour la navigation sociale</h3>
+          <p>Recherche sur l'application du Safe RL à la navigation sociale de robots mobiles en environnement réel, en vue d'une soumission à un workshop ICRA/IROS.</p>
+          <div class="exp-achievements">
+            <div class="achievement">Implémentation et entraînement d'un agent CPO (Constrained Policy Optimization) avec projection de gradient sur la variété des politiques satisfaisant les contraintes, comparaison avec la baseline PPO non contrainte</div>
+            <div class="achievement">Implémentation d'une fonction de coût différentiable basée sur les Control Barrier Functions (CBF) pour garantir des contraintes de sécurité en continu entre deux pas de temps de décision du policy network</div>
+            <div class="achievement">Intégration d'un module de prédiction de trajectoires de piétons (LSTM / Social-LSTM) pour l'anticipation des violations de contraintes à horizon court (predictive safety representation)</div>
+            <div class="achievement">Ablation study systématique sur la valeur du seuil de contrainte κ : analyse de la frontière Pareto reward/safety et identification du point de compromis optimal pour le cas d'usage hôtelier d'ONYRO</div>
+            <div class="achievement">Déploiement du pipeline d'entraînement sur le cluster de calcul du LIA (200+ cœurs) avec parallélisation multi-seed via Ray RLlib pour la reproductibilité statistique des résultats</div>
+            <div class="achievement">Rédaction d'un rapport de recherche structuré (introduction, related work, méthodologie, expériences, discussion) conforme aux standards de soumission d'un workshop ICRA ou IROS (4–6 pages, LaTeX IEEE format)</div>
+          </div>
+          <div class="exp-achievements-extra">
+            <div class="achievement">Revue systématique de la littérature (ICRA, NeurIPS, ICLR 2022–2025) sur les algorithmes Safe RL appliqués à la navigation sociale de robots mobiles (CPO, PPO-Lagrangian, TRPO-Lagrange, IPO)</div>
+            <div class="achievement">Formalisation du problème de navigation d'ONYRO en CMDP (Constrained Markov Decision Process) : définition formelle de l'espace d'états, de l'espace d'actions continu, de la fonction de récompense et des fonctions de coût multiples (distance piétons, zones interdites, budget batterie)</div>
+            <div class="achievement">Modélisation probabiliste des trajectoires de piétons via un Social Force Model (SFM) étendu pour la génération d'agents virtuels réalistes en environnement hôtelier</div>
+            <div class="achievement">Étude comparative des formulations de contraintes : contraintes en espérance (E-CMDP), contraintes en pire cas (Robust CMDP) et contraintes basées sur les Control Barrier Functions (CBF)</div>
+            <div class="achievement">Analyse du compromis reward/safety dans le contexte de la robotique de service : définition des seuils de tolérance aux violations de contraintes (κ) à partir de normes ISO 13482 sur la sécurité des robots de service</div>
+            <div class="achievement">Construction de 4 environnements Gazebo (ROS 2 Humble) représentatifs : hall d'entrée, couloir étroit, salle de restaurant et zone d'ascenseur, avec agents piétons pilotés par ORCA (Optimal Reciprocal Collision Avoidance)</div>
+            <div class="achievement">Implémentation d'un nœud ROS 2 de collecte de données de coût en temps réel (publisher/subscriber) pour la mesure continue de la distance minimum aux obstacles dynamiques et statiques via LiDAR 2D simulé</div>
+            <div class="achievement">Implémentation et entraînement d'un agent PPO-Lagrangian (OmniSafe / Safety-Gymnasium) avec réseau acteur-critique double tête (reward value + cost value) sur les environnements Gazebo via l'interface gym-gazebo2</div>
+            <div class="achievement">Développement d'un curriculum d'entraînement progressif (Curriculum Learning) : démarrage en environnement vide, augmentation progressive du nombre d'agents dynamiques (1 → 5 → 10 → 20 piétons)</div>
+            <div class="achievement">Conception du protocole de benchmarking : définition de 5 métriques quantitatives (Success Rate, SPL, Collision Rate, Constraint Violation Rate, Average Episode Return) sur 100 épisodes de test par configuration</div>
+            <div class="achievement">Évaluation de la généralisation zero-shot des politiques entraînées sur de nouveaux layouts Gazebo non vus durant l'entraînement (test de transfert sim-to-sim)</div>
+            <div class="achievement">Visualisation et analyse qualitative des politiques apprises via RViz 2 : représentation des champs de coût appris, des trajectoires générées et des zones d'évitement adaptées selon la densité de piétons</div>
+            <div class="achievement">Comparaison quantitative avec deux baselines classiques de navigation sociale : Dynamic Window Approach (DWA) de Nav2 et Social Force Model (SFM) pur, sur les métriques du protocole de benchmarking</div>
+            <div class="achievement">Mise en open source du code expérimental (GitHub) avec documentation technique complète (README, scripts de reproduction, fichiers de configuration Hydra/YAML) pour maximiser la reproductibilité et la visibilité du travail</div>
+          </div>
+          <a href="javascript:void(0)" class="expand-btn" onclick="var c=document.getElementById('card-lia');var e=c.classList.toggle('expanded');this.querySelector('span').textContent=e?'Moins de détails':'Plus de détails';">
+            <span>Plus de détails</span><i class="btn-arrow">↓</i>
+          </a>
+          <div class="exp-tags">
+            <span class="tag">Safe RL</span>
+            <span class="tag">PPO-Lagrangian</span>
+            <span class="tag">CPO</span>
+            <span class="tag">OmniSafe</span>
+            <span class="tag">CBF</span>
+            <span class="tag">Ray RLlib</span>
+            <span class="tag">Gazebo</span>
+            <span class="tag">ROS 2</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- AUTRES EXPÉRIENCES -->
+    <div style="margin-top: 48px;">
+      <h3 class="reveal" style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); letter-spacing:0.2em; text-transform:uppercase; margin-bottom:20px;">// Autres expériences</h3>
+      <div class="exp-card reveal" style="background: rgba(8,15,30,0.5); border-color: rgba(26,108,245,0.1);">
+        <div class="exp-meta">
+          <div class="exp-period" style="color:var(--muted);">Mai–Oct. 2024<br>Mai 2025–Jan. 2026</div>
+          <div class="exp-company">Lacoste Dactyl<br>Bureau & École</div>
+          <div class="exp-location">Logistique</div>
+          <div class="exp-badge" style="background:rgba(90,106,133,0.1); border-color:rgba(90,106,133,0.3); color:var(--muted);">CDD</div>
+        </div>
+        <div class="exp-content">
+          <h3 style="font-size:18px;">Dispatcheur & Préparateur de commandes</h3>
+          <p>Gestion logistique et préparation de commandes au sein d'une entreprise spécialisée dans la fourniture de bureau et matériel scolaire. Deux missions en parallèle des études.</p>
+          <div class="exp-achievements">
+            <div class="achievement">Dispatch de colis en bout de convoyeur : tri et palettisation par zone géographique d'expédition (ex. Bordeaux, Lyon...) avec scan de chaque colis sur le bon support</div>
+            <div class="achievement">Optimisation du chargement des palettes pour garantir la stabilité et éviter l'affaissement des colis lors du transport</div>
+            <div class="achievement">Filmage des palettes finalisées à l'aide d'une filmeuse automatique, récupération avec transpalette et édition des documents d'expédition associés</div>
+            <div class="achievement">Chargement des palettes dans les camions dans le respect des consignes logistiques et des délais d'enlèvement</div>
+            <div class="achievement">Préparation de commandes à l'aide d'un PDA (scanette) : prélèvement des articles aux emplacements indiqués, respect des quantités et des références — incluant la préparation de mobilier (bureaux, tables, chaises)</div>
+            <div class="achievement">Traitement des expéditions via transporteurs spéciaux (DPD...) : tri, scan et remise des colis selon les procédures propres à chaque transporteur</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <div class="reveal">
+      <div class="section-header">
+        <span class="section-tag">// 003</span>
+        <div class="section-line"></div>
+      </div>
+      <h2 class="section-title">Compétences IA<br>& Robotique</h2>
+    </div>
+
+    <div class="skills-grid">
+      <div class="skill-group reveal">
+        <div class="skill-group-icon">🤖</div>
+        <h4>Navigation & SLAM</h4>
+        <div class="skill-list">
+          <div class="skill-item"><span class="skill-name">VSLAM / ORB-SLAM3</span><span class="badge badge-maitrise">Maîtrisé</span></div>
+          <div class="skill-item"><span class="skill-name">Nav2 / DWB</span><span class="badge badge-pratique">Pratiqué</span></div>
+          <div class="skill-item"><span class="skill-name">LiDAR + RGB-D fusion</span><span class="badge badge-pratique">Pratiqué</span></div>
+          <div class="skill-item"><span class="skill-name">Multi-floor mapping</span><span class="badge badge-pratique">Pratiqué</span></div>
+        </div>
+      </div>
+
+      <div class="skill-group reveal">
+        <div class="skill-group-icon">🧠</div>
+        <h4>Reinforcement Learning</h4>
+        <div class="skill-list">
+          <div class="skill-item"><span class="skill-name">PPO / SAC / CPO</span><span class="badge badge-maitrise">Maîtrisé</span></div>
+          <div class="skill-item"><span class="skill-name">Safe RL / CMDP</span><span class="badge badge-maitrise">Maîtrisé</span></div>
+          <div class="skill-item"><span class="skill-name">OmniSafe / Ray RLlib</span><span class="badge badge-pratique">Pratiqué</span></div>
+          <div class="skill-item"><span class="skill-name">Control Barrier Functions</span><span class="badge badge-pratique">Pratiqué</span></div>
+        </div>
+      </div>
+
+      <div class="skill-group reveal">
+        <div class="skill-group-icon">👁️</div>
+        <h4>Vision par ordinateur</h4>
+        <div class="skill-list">
+          <div class="skill-item"><span class="skill-name">YOLOv8 / Mask R-CNN</span><span class="badge badge-pratique">Pratiqué</span></div>
+          <div class="skill-item"><span class="skill-name">Pose 6-DoF / FoundationPose</span><span class="badge badge-pratique">Pratiqué</span></div>
+          <div class="skill-item"><span class="skill-name">Transfer learning</span><span class="badge badge-maitrise">Maîtrisé</span></div>
+          <div class="skill-item"><span class="skill-name">Grad-CAM / SHAP (XAI)</span><span class="badge badge-pratique">Pratiqué</span></div>
+        </div>
+      </div>
+
+      <div class="skill-group reveal">
+        <div class="skill-group-icon">🗣️</div>
+        <h4>NLP & Parole</h4>
+        <div class="skill-list">
+          <div class="skill-item"><span class="skill-name">ASR (Whisper / Wav2Vec)</span><span class="badge badge-pratique">Pratiqué</span></div>
+          <div class="skill-item"><span class="skill-name">TTS (Coqui / ElevenLabs)</span><span class="badge badge-pratique">Pratiqué</span></div>
+          <div class="skill-item"><span class="skill-name">LLM fine-tuning / NLU</span><span class="badge badge-pratique">Pratiqué</span></div>
+          <div class="skill-item"><span class="skill-name">Dialogue systems</span><span class="badge badge-notions">Notions</span></div>
+        </div>
+      </div>
+
+      <div class="skill-group reveal">
+        <div class="skill-group-icon">⚙️</div>
+        <h4>ROS 2 & Simulation</h4>
+        <div class="skill-list">
+          <div class="skill-item"><span class="skill-name">ROS 2 (Humble/Iron)</span><span class="badge badge-maitrise">Maîtrisé</span></div>
+          <div class="skill-item"><span class="skill-name">Gazebo / Isaac Sim</span><span class="badge badge-maitrise">Maîtrisé</span></div>
+          <div class="skill-item"><span class="skill-name">MoveIt 2 / IK solver</span><span class="badge badge-pratique">Pratiqué</span></div>
+          <div class="skill-item"><span class="skill-name">RViz 2 / Foxglove</span><span class="badge badge-pratique">Pratiqué</span></div>
+        </div>
+      </div>
+
+      <div class="skill-group reveal">
+        <div class="skill-group-icon">📊</div>
+        <h4>MLOps & Génie logiciel</h4>
+        <div class="skill-list">
+          <div class="skill-item"><span class="skill-name">MLflow / DVC / W&B</span><span class="badge badge-pratique">Pratiqué</span></div>
+          <div class="skill-item"><span class="skill-name">Docker / Linux / Bash</span><span class="badge badge-pratique">Pratiqué</span></div>
+          <div class="skill-item"><span class="skill-name">Git / GitHub / CI-CD</span><span class="badge badge-maitrise">Maîtrisé</span></div>
+          <div class="skill-item"><span class="skill-name">LaTeX (IEEE/ACL)</span><span class="badge badge-pratique">Pratiqué</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOOLS -->
+  <section id="tools">
+    <div class="tools-header reveal">
+      <div class="section-header">
+        <span class="section-tag">// 004</span>
+        <div class="section-line"></div>
+      </div>
+      <h3 style="font-size:20px; font-weight:700; margin-bottom:8px; color:var(--muted)">Stack technique</h3>
+    </div>
+    <div class="tools-grid reveal">
+      <span class="tool-chip">Python</span>
+      <span class="tool-chip">PyTorch</span>
+      <span class="tool-chip">TensorFlow</span>
+      <span class="tool-chip">Hugging Face</span>
+      <span class="tool-chip">ROS 2</span>
+      <span class="tool-chip">Gazebo</span>
+      <span class="tool-chip">Isaac Sim</span>
+      <span class="tool-chip">OpenCV</span>
+      <span class="tool-chip">YOLOv8</span>
+      <span class="tool-chip">ORB-SLAM3</span>
+      <span class="tool-chip">Nav2</span>
+      <span class="tool-chip">MoveIt 2</span>
+      <span class="tool-chip">OmniSafe</span>
+      <span class="tool-chip">Ray RLlib</span>
+      <span class="tool-chip">MLflow</span>
+      <span class="tool-chip">DVC</span>
+      <span class="tool-chip">W&B</span>
+      <span class="tool-chip">Docker</span>
+      <span class="tool-chip">Jetson Orin</span>
+      <span class="tool-chip">Git / GitHub</span>
+      <span class="tool-chip">NumPy / Pandas</span>
+      <span class="tool-chip">Scikit-learn</span>
+      <span class="tool-chip">LaTeX</span>
+      <span class="tool-chip">SQL / Spark</span>
+    </div>
+  </section>
+
+  <!-- FORMATION -->
+  <section id="formation">
+    <div class="reveal">
+      <div class="section-header">
+        <span class="section-tag">// 005</span>
+        <div class="section-line"></div>
+      </div>
+      <h2 class="section-title">Formation</h2>
+    </div>
+
+    <div class="formation-timeline">
+
+      <div class="formation-item reveal">
+        <div class="formation-year">2023 — 2025</div>
+        <div class="formation-body">
+          <h4>Master Informatique — Intelligence Artificielle</h4>
+          <div class="formation-school">Avignon Université · CERI · Campus Jean-Henri Fabre</div>
+          <p>Formation BAC+5 spécialisée en IA, apprentissage automatique, vision par ordinateur, traitement du langage et robotique. Stage obligatoire en entreprise ou laboratoire.</p>
+          <span class="formation-diploma">Bac+5 · Master</span>
+        </div>
+      </div>
+
+      <div class="formation-item reveal">
+        <div class="formation-year">2022 — 2023</div>
+        <div class="formation-body">
+          <h4>Bachelor Intelligence Artificielle — Business Intelligence</h4>
+          <div class="formation-school">Nexa (anciennement IA School)</div>
+          <p>Troisième année d'un Bachelor IA axé sur les applications pratiques du machine learning, du deep learning et des systèmes intelligents.</p>
+          <span class="formation-diploma">Bac+3 · Bachelor</span>
+        </div>
+      </div>
+
+      <div class="formation-item reveal">
+        <div class="formation-year">2020 — 2022</div>
+        <div class="formation-body">
+          <h4>Licence Informatique — Parcours Mathématiques-Informatique</h4>
+          <div class="formation-school">Aix-Marseille Université · Faculté des Sciences de Luminy</div>
+          <p>Licence scientifique alliant fondements mathématiques (algèbre, analyse, probabilités) et informatique (algorithmique, programmation, systèmes). Spécialisation progressive en informatique théorique et appliquée.</p>
+          <span class="formation-diploma">Bac+3 · Licence</span>
+        </div>
+      </div>
+
+      <div class="formation-item reveal">
+        <div class="formation-year">2019 — 2020</div>
+        <div class="formation-body">
+          <h4>L1 Portail René Descartes — Mathématiques — Informatique — Physique — Mécanique</h4>
+          <div class="formation-school">Aix-Marseille Université · Faculté des Sciences de Luminy</div>
+          <p>Première année de portail Sciences et Technologies — socle commun en mathématiques, physique et informatique.</p>
+          <span class="formation-diploma">Bac+1 · L1</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SOFTSKILLS & INTÉRÊTS -->
+  <section id="softskills" style="padding: 100px 60px;">
+    <div class="reveal">
+      <div class="section-header">
+        <span class="section-tag">// 006</span>
+        <div class="section-line"></div>
+      </div>
+      <h2 class="section-title">Softskills &<br>Centres d'intérêt</h2>
+    </div>
+
+    <!-- SOFTSKILLS 2 colonnes de 5 -->
+    <h3 class="reveal" style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--cyan); letter-spacing:0.2em; text-transform:uppercase; margin-bottom:24px;">Compétences humaines</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0 48px;">
+
+      <!-- COLONNE 1 — items 1 à 5 -->
+      <div>
+        <div class="reveal" style="padding:18px 0; border-bottom:1px solid var(--border); display:flex; gap:16px; align-items:flex-start;">
+          <span style="font-size:18px; flex-shrink:0; margin-top:2px;">🔬</span>
+          <div><div style="font-size:14px; font-weight:700; margin-bottom:4px;">Rigueur scientifique</div>
+          <div style="font-size:13px; color:rgba(232,238,248,0.55); line-height:1.6;">Protocoles expérimentaux reproductibles, benchmarking statistique, rédaction académique</div></div>
+        </div>
+        <div class="reveal" style="padding:18px 0; border-bottom:1px solid var(--border); display:flex; gap:16px; align-items:flex-start;">
+          <span style="font-size:18px; flex-shrink:0; margin-top:2px;">⚡</span>
+          <div><div style="font-size:14px; font-weight:700; margin-bottom:4px;">Autonomie & initiative</div>
+          <div style="font-size:13px; color:rgba(232,238,248,0.55); line-height:1.6;">Gestion de projets R&D en startup et en laboratoire, prise de décision sans supervision constante</div></div>
+        </div>
+        <div class="reveal" style="padding:18px 0; border-bottom:1px solid var(--border); display:flex; gap:16px; align-items:flex-start;">
+          <span style="font-size:18px; flex-shrink:0; margin-top:2px;">🔭</span>
+          <div><div style="font-size:14px; font-weight:700; margin-bottom:4px;">Curiosité intellectuelle</div>
+          <div style="font-size:13px; color:rgba(232,238,248,0.55); line-height:1.6;">Veille technologique active, lecture de papiers de recherche (ICRA, NeurIPS, ICASSP)</div></div>
+        </div>
+        <div class="reveal" style="padding:18px 0; border-bottom:1px solid var(--border); display:flex; gap:16px; align-items:flex-start;">
+          <span style="font-size:18px; flex-shrink:0; margin-top:2px;">🔄</span>
+          <div><div style="font-size:14px; font-weight:700; margin-bottom:4px;">Adaptabilité</div>
+          <div style="font-size:13px; color:rgba(232,238,248,0.55); line-height:1.6;">Passage fluide du cadre académique (LIA) au cadre industriel (Ipsum Tek)</div></div>
+        </div>
+        <div class="reveal" style="padding:18px 0; display:flex; gap:16px; align-items:flex-start;">
+          <span style="font-size:18px; flex-shrink:0; margin-top:2px;">📢</span>
+          <div><div style="font-size:14px; font-weight:700; margin-bottom:4px;">Communication technique</div>
+          <div style="font-size:13px; color:rgba(232,238,248,0.55); line-height:1.6;">Rédaction de rapports R&D, présentation de résultats à des équipes pluridisciplinaires</div></div>
+        </div>
+      </div>
+
+      <!-- COLONNE 2 — items 6 à 10 -->
+      <div>
+        <div class="reveal" style="padding:18px 0; border-bottom:1px solid var(--border); display:flex; gap:16px; align-items:flex-start;">
+          <span style="font-size:18px; flex-shrink:0; margin-top:2px;">🧩</span>
+          <div><div style="font-size:14px; font-weight:700; margin-bottom:4px;">Esprit de synthèse</div>
+          <div style="font-size:13px; color:rgba(232,238,248,0.55); line-height:1.6;">Capacité à extraire l'essentiel d'une littérature dense pour en tirer des choix d'implémentation</div></div>
+        </div>
+        <div class="reveal" style="padding:18px 0; border-bottom:1px solid var(--border); display:flex; gap:16px; align-items:flex-start;">
+          <span style="font-size:18px; flex-shrink:0; margin-top:2px;">🧠</span>
+          <div><div style="font-size:14px; font-weight:700; margin-bottom:4px;">Résolution de problèmes complexes</div>
+          <div style="font-size:13px; color:rgba(232,238,248,0.55); line-height:1.6;">Approche méthodique face à des systèmes à composantes multiples (perception, décision, actuation)</div></div>
+        </div>
+        <div class="reveal" style="padding:18px 0; border-bottom:1px solid var(--border); display:flex; gap:16px; align-items:flex-start;">
+          <span style="font-size:18px; flex-shrink:0; margin-top:2px;">🤝</span>
+          <div><div style="font-size:14px; font-weight:700; margin-bottom:4px;">Travail en équipe</div>
+          <div style="font-size:13px; color:rgba(232,238,248,0.55); line-height:1.6;">Collaboration avec des profils variés : chercheurs, ingénieurs hardware, développeurs logiciels</div></div>
+        </div>
+        <div class="reveal" style="padding:18px 0; border-bottom:1px solid var(--border); display:flex; gap:16px; align-items:flex-start;">
+          <span style="font-size:18px; flex-shrink:0; margin-top:2px;">⏱️</span>
+          <div><div style="font-size:14px; font-weight:700; margin-bottom:4px;">Gestion du temps & priorisation</div>
+          <div style="font-size:13px; color:rgba(232,238,248,0.55); line-height:1.6;">Conduite de projets à contrainte temporelle forte (stage 2 mois avec livrable de recherche)</div></div>
+        </div>
+        <div class="reveal" style="padding:18px 0; display:flex; gap:16px; align-items:flex-start;">
+          <span style="font-size:18px; flex-shrink:0; margin-top:2px;">🌐</span>
+          <div><div style="font-size:14px; font-weight:700; margin-bottom:4px;">Ouverture à l'interdisciplinarité</div>
+          <div style="font-size:13px; color:rgba(232,238,248,0.55); line-height:1.6;">Croisement de l'IA, de la robotique, du traitement du signal et des sciences cognitives</div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CENTRES D'INTÉRÊT -->
+    <h3 class="reveal" style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--cyan); letter-spacing:0.2em; text-transform:uppercase; margin-top:64px; margin-bottom:24px;">Centres d'intérêt</h3>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+
+      <div class="reveal" style="padding:28px; background:var(--bg2); border:1px solid var(--border); border-radius:12px; display:flex; gap:20px; align-items:center; transition:border-color 0.3s,transform 0.3s;" onmouseenter="this.style.borderColor='rgba(0,212,255,0.25)';this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='rgba(26,108,245,0.18)';this.style.transform='translateY(0)'">
+        <span style="font-size:32px;">⚽</span>
+        <div><div style="font-size:16px; font-weight:700; margin-bottom:4px;">Sports</div>
+        <div style="font-size:13px; color:rgba(232,238,248,0.55);">Football · Basketball · Running</div></div>
+      </div>
+
+      <div class="reveal" style="padding:28px; background:var(--bg2); border:1px solid var(--border); border-radius:12px; display:flex; gap:20px; align-items:center; transition:border-color 0.3s,transform 0.3s;" onmouseenter="this.style.borderColor='rgba(0,212,255,0.25)';this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='rgba(26,108,245,0.18)';this.style.transform='translateY(0)'">
+        <span style="font-size:32px;">🚗</span>
+        <div><div style="font-size:16px; font-weight:700; margin-bottom:4px;">Automobile & mobilité autonome</div>
+        <div style="font-size:13px; color:rgba(232,238,248,0.55);">Passion pour les véhicules et les systèmes de conduite autonome</div></div>
+      </div>
+
+      <div class="reveal" style="padding:28px; background:var(--bg2); border:1px solid var(--border); border-radius:12px; display:flex; gap:20px; align-items:center; transition:border-color 0.3s,transform 0.3s;" onmouseenter="this.style.borderColor='rgba(0,212,255,0.25)';this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='rgba(26,108,245,0.18)';this.style.transform='translateY(0)'">
+        <span style="font-size:32px;">🤖</span>
+        <div><div style="font-size:16px; font-weight:700; margin-bottom:4px;">Veille technologique & robotique</div>
+        <div style="font-size:13px; color:rgba(232,238,248,0.55);">Suivi des avancées en robotique humanoïde, IA et systèmes autonomes</div></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="reveal">
+      <h2 class="contact-title">On se<br><span>contacte ?</span></h2>
+      <p class="contact-sub">Je suis disponible pour des opportunités en robotique humanoïde, défense et mobilité autonome. N'hésitez pas à me contacter.</p>
+      <div class="contact-links">
+        <a href="mailto:maximescibona@gmail.com" class="contact-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Email
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span>© 2026 Maxime Scibona</span>
+    <span>maximescibona.fr</span>
+  </footer>
+
+  <script>
+    // Toggle card expand
+    function toggleCard(id) {
+      const card = document.getElementById(id);
+      const label = card.querySelector('.expand-btn span');
+      const isExpanded = card.classList.toggle('expanded');
+      label.textContent = isExpanded ? 'Moins de détails' : 'Plus de détails';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.expand-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          const card = btn.closest('.exp-card');
+          const label = btn.querySelector('span');
+          const isExpanded = card.classList.toggle('expanded');
+          label.textContent = isExpanded ? 'Moins de détails' : 'Plus de détails';
+        });
+      });
+    });
+
+    // Custom cursor
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      cursor.style.left = mx - 4 + 'px';
+      cursor.style.top = my - 4 + 'px';
+    });
+
+    function animateRing() {
+      rx += (mx - rx - 16) * 0.12;
+      ry += (my - ry - 16) * 0.12;
+      ring.style.left = rx + 'px';
+      ring.style.top = ry + 'px';
+      requestAnimationFrame(animateRing);
+    }
+    animateRing();
+
+    document.querySelectorAll('a, button').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        cursor.style.transform = 'scale(2)';
+        ring.style.transform = 'scale(1.5)';
+        ring.style.borderColor = 'var(--cyan)';
+      });
+      el.addEventListener('mouseleave', () => {
+        cursor.style.transform = 'scale(1)';
+        ring.style.transform = 'scale(1)';
+        ring.style.borderColor = 'rgba(0, 212, 255, 0.4)';
+      });
+    });
+
+    // Scroll reveal — add hidden first, then reveal
+    const revealEls = document.querySelectorAll('.reveal');
+    revealEls.forEach(el => el.classList.add('hidden'));
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => {
+            entry.target.classList.remove('hidden');
+            entry.target.classList.add('visible');
+          }, i * 80);
+        }
+      });
+    }, { threshold: 0.08 });
+
+    revealEls.forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
